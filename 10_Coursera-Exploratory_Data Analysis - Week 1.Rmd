@@ -1,0 +1,104 @@
+---
+title: "Exploratory Data Analysis - Week 1 assignment"
+output: html_notebook
+---
+
+This notebook has the work for the Exploratory Data Analysis week 1. To conform to the submission requirements, it needs to be converted into individual R scripts for each image that is produced.
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+
+Download the source data:
+```{r download}
+localfile <- "power_consumption.zip"
+url <- "https://d396qusza40orc.cloudfront.net/exdata%2Fdata%2Fhousehold_power_consumption.zip"
+dir <- "data"
+extracted_filename = "household_power_consumption.txt"
+# Download and unzip only if the file isn't already local. 
+if(!file.exists(localfile)){
+  download.file(url,localfile, mode = "wb") # use binary mode since it's a zip file
+}
+if(!file.exists(dir)){
+  unzip(localfile, files = NULL, exdir=".")
+}
+```
+Load the extracted data file and condition it. We'll add a timestamp column for convenience of generating the plots. 
+```{r load data}
+pwr <- read.table(extracted_filename, sep=";", header=TRUE, colClasses="character")
+pwr$timestamp = paste(pwr$Date, pwr$Time, sep=' ')
+pwr$timestamp = strptime(pwr$timestamp,format ='%d/%m/%Y %H:%M:%S')                      
+```
+
+The first plot is a frequency plot of Global active power vs frequency for a specified date (2007-02-02) 
+```{r plot 1}
+subpwr <- subset(pwr, Date=="2/2/2007" | Date=="1/2/2007") # we could also convert to dates and do arithmetic, but this string comparison is much faster.
+h <- hist(
+  as.numeric(subpwr$Global_active_power), 
+  col="red", 
+  main="Global Active Power",
+  xlab="Global active power (kilowatts)"
+     )
+dev.copy(png, file="plot1.png")
+dev.off()
+```
+
+
+The second plot is a frequency plot of GAP (y) vs timestamped data(x)
+
+```{r plot 2}
+plot(subpwr$timestamp, subpwr$Global_active_power, 
+     type = 'l',
+     main = 'Global active power', 
+     xlab = NA,
+     ylab = 'Global active power (kilowatts)'
+)
+dev.copy(png, file="plot2.png")
+dev.off()
+```
+The third plot shows three sub metering values on our two-day period of data. 
+```{r plot 3}
+
+plot(subpwr$timestamp, subpwr$Sub_metering_1, type="l",ylab = "Energy sub metering", xlab="" , col="black")
+points(subpwr$timestamp, subpwr$Sub_metering_2, type="l", col="red")
+points(subpwr$timestamp, subpwr$Sub_metering_3, type="l", col="blue")
+
+# add a legend
+legend("topright", 
+       lty = c(1, 1, 1), # line type 1 is a solid line. Required argumen 
+       col = c("black", "red", "blue"),  # colors
+       legend = c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3")
+       )
+
+# output PNG file
+dev.copy(png, file="plot3.png")
+dev.off()
+```
+
+Finally we combine all the plots above
+```{r plot 4}
+
+
+par(mfrow=c(2,2))
+
+with(subpwr, {
+  plot(timestamp, Global_active_power, type="l", ylab="Global Active Power", xlab="")
+  plot(timestamp, Voltage, type="l", ylab="Voltage", xlab="datetime")
+  plot(timestamp, Sub_metering_1, type="l",ylab = "Energy sub metering", xlab="" , col="black")
+points(timestamp, Sub_metering_2, type="l", col="red")
+points(timestamp, Sub_metering_3, type="l", col="blue")
+legend("topright", 
+       lty = c(1, 1, 1), # line type 1 is a solid line. Required argument 
+       col = c("black", "red", "blue"),  # colors
+       legend = c("Sub_metering_1", "Sub_metering_2", "Sub_metering_3"),
+       bty="n",
+       cex=.7, xjust=1, yjust=1
+       )
+plot(timestamp, Global_reactive_power, type="l", ylab="Global_reactive_power", xlab="datetime")
+})
+
+# output PNG file
+dev.copy(png, file="plot3.png",width = 480, height = 480)
+dev.off()
+```
+
